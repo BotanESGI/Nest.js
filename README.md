@@ -37,7 +37,7 @@ Services disponibles:
 
 - API: `http://localhost:3000`
 - PostgreSQL: `localhost:5432`
-- Adminer: `http://localhost:8080`
+- Adminer: `http://localhost:8081`
 
 Arrêter l’environnement dev:
 
@@ -86,6 +86,8 @@ Les tests d’intégration couvrent toutes les routes exposées:
 - `PUT /tournaments/:id`
 - `DELETE /tournaments/:id`
 - `POST /tournaments/:id/join`
+- `GET /games`
+- `POST /games`
 
 ## Authentification JWT
 
@@ -122,7 +124,8 @@ Réponse (register/login):
     "user": {
       "id": "uuid",
       "username": "aya",
-      "email": "aya@example.com"
+      "email": "aya@example.com",
+      "role": "admin"
     }
   }
 }
@@ -135,6 +138,9 @@ Ajouter l’en-tête HTTP sur les routes protégées:
 ```http
 Authorization: Bearer <jwt>
 ```
+
+Le premier utilisateur inscrit reçoit automatiquement le rôle `admin`, les suivants le rôle `user`.
+Si la base contient déjà des utilisateurs (volume Docker persistant), un nouveau compte ne sera pas `admin`.
 
 ## Routes Tournois
 
@@ -157,12 +163,88 @@ Exemple de création:
 }
 ```
 
+## Routes Games
+
+- `GET /games` (publique)
+- `POST /games` (protégée JWT + rôle admin)
+
+Exemple de création:
+
+```json
+{
+  "name": "Counter Strike 2",
+  "publisher": "Valve",
+  "releaseDate": "2023-09-27",
+  "genre": "FPS"
+}
+```
+
+## Scénario de test manuel (games + rôles)
+
+### 1) Redémarrer proprement l'environnement
+
+```bash
+docker compose down -v
+docker compose up --build -d
+```
+
+### 2) Créer le premier utilisateur (admin attendu)
+
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username":"admin1",
+    "email":"admin1@example.com",
+    "password":"VeryStrongPass1"
+  }'
+```
+
+Vérifier dans la réponse: `data.user.role = "admin"`.
+
+### 3) Créer le second utilisateur (user attendu)
+
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username":"user1",
+    "email":"user1@example.com",
+    "password":"VeryStrongPass1"
+  }'
+```
+
+Vérifier dans la réponse: `data.user.role = "user"`.
+
+### 4) Tester les routes games
+
+- `GET /games` sans token -> `200`
+- `POST /games` sans token -> `401`
+- `POST /games` avec token `user` -> `403`
+- `POST /games` avec token `admin` -> `201`
+
+Exemple payload:
+
+```json
+{
+  "name": "Counter Strike 2",
+  "publisher": "Valve",
+  "releaseDate": "2023-09-27",
+  "genre": "FPS"
+}
+```
+
+### 5) Tester la validation DTO
+
+Avec un token admin, envoyer un payload invalide (champs vides / date invalide) sur `POST /games` -> `400`.
+
 ## Architecture
 
 - `src/auth`: module d’authentification (controller, service, stratégie JWT)
 - `src/tournaments`: routes métier tournois
+- `src/games`: routes métier jeux
 - `src/database/entities`: entités TypeORM
-- `src/common`: guard JWT et interceptor de transformation des réponses
+- `src/common`: guards JWT/admin et interceptor de transformation des réponses
 
 ## Remarques
 

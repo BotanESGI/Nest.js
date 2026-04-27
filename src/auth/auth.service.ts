@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
-import { Player } from '../database/entities/player.entity';
+import { Player, PlayerRole } from '../database/entities/player.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -12,7 +12,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 type AuthResponse = {
   accessToken: string;
   expiresIn: string;
-  user: Pick<Player, 'id' | 'username' | 'email'>;
+  user: Pick<Player, 'id' | 'username' | 'email' | 'role'>;
 };
 
 @Injectable()
@@ -40,10 +40,12 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const playersCount = await this.playersRepository.count();
     const player = this.playersRepository.create({
       username: dto.username,
       email: dto.email.toLowerCase(),
       password: hashedPassword,
+      role: playersCount === 0 ? PlayerRole.ADMIN : PlayerRole.USER,
       avatar: null,
     });
 
@@ -77,6 +79,7 @@ export class AuthService {
       sub: player.id,
       email: player.email,
       username: player.username,
+      role: player.role,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -89,6 +92,7 @@ export class AuthService {
         id: player.id,
         username: player.username,
         email: player.email,
+        role: player.role,
       },
     };
   }

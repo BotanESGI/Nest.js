@@ -9,6 +9,11 @@ import {
 import { Match } from './match.entity';
 import { Tournament } from './tournament.entity';
 
+export enum PlayerRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 @Entity('players')
 export class Player {
   @PrimaryGeneratedColumn('uuid')
@@ -22,6 +27,13 @@ export class Player {
 
   @Column()
   password!: string;
+
+  @Column({
+    type: 'enum',
+    enum: PlayerRole,
+    default: PlayerRole.USER,
+  })
+  role!: PlayerRole;
 
   @Column({ type: 'varchar', nullable: true })
   avatar!: string | null;

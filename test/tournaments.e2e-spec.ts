@@ -8,21 +8,26 @@ import * as request from 'supertest';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
 import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
-import { Player } from '../src/database/entities/player.entity';
+import { Game } from '../src/database/entities/game.entity';
+import { Player, PlayerRole } from '../src/database/entities/player.entity';
+import { GamesController } from '../src/games/games.controller';
+import { GamesService } from '../src/games/games.service';
 import { TournamentStatus } from '../src/database/entities/tournament.entity';
 import { TournamentsController } from '../src/tournaments/tournaments.controller';
 import { TournamentsService } from '../src/tournaments/tournaments.service';
 
 describe('TournamentsController (e2e)', () => {
   let app: INestApplication;
-  let accessToken = '';
+  let adminAccessToken = '';
+  let userAccessToken = '';
 
-  const game = {
+  const game: Game = {
     id: 'ea4140da-ba9e-4181-a6b8-df0776b1f59c',
     name: 'Test',
     publisher: 'Test',
     releaseDate: new Date('2026-04-27'),
-    genre: 'HOMME',
+    genre: 'MOBA',
+    tournaments: [],
   };
 
   const tournament = {
@@ -49,6 +54,18 @@ describe('TournamentsController (e2e)', () => {
     }),
   };
 
+  const gamesServiceMock: Partial<GamesService> = {
+    findAll: jest.fn().mockResolvedValue([game]),
+    create: jest.fn().mockResolvedValue({
+      ...game,
+      id: 'bcb93f2f-a31b-4e6f-9092-0a91ddfae60a',
+      name: 'Counter Strike 2',
+      publisher: 'Valve',
+      releaseDate: new Date('2023-09-27'),
+      genre: 'FPS',
+    }),
+  };
+
   const players: Player[] = [];
   const playersRepositoryMock = {
     findOne: jest.fn(
@@ -70,10 +87,16 @@ describe('TournamentsController (e2e)', () => {
       },
     ),
     create: jest.fn((payload: Partial<Player>): Player => payload as Player),
+    count: jest.fn(async (): Promise<number> => players.length),
     save: jest.fn(async (player: Player): Promise<Player> => {
       const savedPlayer: Player = {
         ...player,
-        id: player.id ?? '11111111-1111-4111-8111-111111111111',
+        id:
+          player.id ??
+          (players.length === 0
+            ? '11111111-1111-4111-8111-111111111111'
+            : '22222222-2222-4222-8222-222222222222'),
+        role: player.role ?? PlayerRole.USER,
         createdAt: player.createdAt ?? new Date(),
         tournaments: player.tournaments ?? [],
         matchesAsPlayer1: player.matchesAsPlayer1 ?? [],
@@ -91,13 +114,14 @@ describe('TournamentsController (e2e)', () => {
         PassportModule,
         JwtModule.register({ secret: 'super_secret_key', signOptions: { expiresIn: '1d' } }),
       ],
-      controllers: [AuthController, TournamentsController],
+      controllers: [AuthController, TournamentsController, GamesController],
       providers: [
         AuthService,
         JwtStrategy,
         { provide: ConfigService, useValue: { get: (_key: string, fallback: string) => fallback } },
         { provide: getRepositoryToken(Player), useValue: playersRepositoryMock },
         { provide: TournamentsService, useValue: tournamentsServiceMock },
+        { provide: GamesService, useValue: gamesServiceMock },
       ],
     }).compile();
 
@@ -126,7 +150,7 @@ describe('TournamentsController (e2e)', () => {
     expect(response.body.path).toBe('/tournaments?status=pending');
   });
 
-  it('POST /auth/register returns 201 and a valid JWT', async () => {
+  it('POST /auth/register (first user) returns 201 and admin token', async () => {
     const response = await request(app.getHttpServer()).post('/auth/register').send({
       username: 'aya',
       email: 'aya@example.com',
@@ -135,8 +159,9 @@ describe('TournamentsController (e2e)', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.user.email).toBe('aya@example.com');
+    expect(response.body.data.user.role).toBe(PlayerRole.ADMIN);
     expect(response.body.data.accessToken).toBeDefined();
-    accessToken = response.body.data.accessToken;
+    adminAccessToken = response.body.data.accessToken;
   });
 
   it('POST /auth/login returns 201', async () => {
@@ -147,6 +172,19 @@ describe('TournamentsController (e2e)', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.accessToken).toBeDefined();
+  });
+
+  it('POST /auth/register (second user) returns user token', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/register').send({
+      username: 'neo',
+      email: 'neo@example.com',
+      password: 'VeryStrongPass1',
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.user.role).toBe(PlayerRole.USER);
+    expect(response.body.data.accessToken).toBeDefined();
+    userAccessToken = response.body.data.accessToken;
   });
 
   it('POST /auth/register validates payload', async () => {
@@ -184,7 +222,7 @@ describe('TournamentsController (e2e)', () => {
   it('POST /tournaments with token returns 201', async () => {
     const response = await request(app.getHttpServer())
       .post('/tournaments')
-      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
       .send({
         name: 'Spring Cup',
         maxPlayers: 16,
@@ -200,7 +238,7 @@ describe('TournamentsController (e2e)', () => {
   it('PUT /tournaments/:id with token returns 200', async () => {
     const response = await request(app.getHttpServer())
       .put(`/tournaments/${tournament.id}`)
-      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
       .send({ name: 'Spring Cup Updated' })
       .expect(200);
 
@@ -210,7 +248,7 @@ describe('TournamentsController (e2e)', () => {
   it('POST /tournaments/:id/join with token returns 201', async () => {
     const response = await request(app.getHttpServer())
       .post(`/tournaments/${tournament.id}/join`)
-      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
       .expect(201);
 
     expect(response.body.data.players).toHaveLength(1);
@@ -219,7 +257,67 @@ describe('TournamentsController (e2e)', () => {
   it('DELETE /tournaments/:id with token returns 204', async () => {
     await request(app.getHttpServer())
       .delete(`/tournaments/${tournament.id}`)
-      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
       .expect(204);
+  });
+
+  it('GET /games returns 200', async () => {
+    const response = await request(app.getHttpServer()).get('/games').expect(200);
+
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].id).toBe(game.id);
+  });
+
+  it('POST /games without token returns 401', async () => {
+    await request(app.getHttpServer())
+      .post('/games')
+      .send({
+        name: 'Counter Strike 2',
+        publisher: 'Valve',
+        releaseDate: '2023-09-27',
+        genre: 'FPS',
+      })
+      .expect(401);
+  });
+
+  it('POST /games with non-admin token returns 403', async () => {
+    await request(app.getHttpServer())
+      .post('/games')
+      .set('Authorization', `Bearer ${userAccessToken}`)
+      .send({
+        name: 'Counter Strike 2',
+        publisher: 'Valve',
+        releaseDate: '2023-09-27',
+        genre: 'FPS',
+      })
+      .expect(403);
+  });
+
+  it('POST /games with admin token returns 201', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/games')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({
+        name: 'Counter Strike 2',
+        publisher: 'Valve',
+        releaseDate: '2023-09-27',
+        genre: 'FPS',
+      })
+      .expect(201);
+
+    expect(response.body.data.name).toBe('Counter Strike 2');
+  });
+
+  it('POST /games validates payload', async () => {
+    await request(app.getHttpServer())
+      .post('/games')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({
+        name: '',
+        publisher: '',
+        releaseDate: 'invalid-date',
+        genre: '',
+      })
+      .expect(400);
   });
 });
