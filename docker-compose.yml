@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: tournaments-db
+    container_name: tournaments-db-dev
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -14,7 +14,7 @@ services:
 
   adminer:
     image: adminer:4
-    container_name: tournaments-adminer
+    container_name: tournaments-adminer-dev
     restart: unless-stopped
     depends_on:
       - db
@@ -25,11 +25,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: tournaments-api
+    container_name: tournaments-api-dev
     depends_on:
       - db
     env_file:
       - .env.example
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
     ports:
       - "3000:3000"
     volumes:

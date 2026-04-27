@@ -1,12 +1,21 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
+import { AuthController } from '../src/auth/auth.controller';
+import { AuthService } from '../src/auth/auth.service';
+import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
+import { Player } from '../src/database/entities/player.entity';
 import { TournamentStatus } from '../src/database/entities/tournament.entity';
 import { TournamentsController } from '../src/tournaments/tournaments.controller';
 import { TournamentsService } from '../src/tournaments/tournaments.service';
 
 describe('TournamentsController (e2e)', () => {
   let app: INestApplication;
+  let accessToken = '';
 
   const game = {
     id: 'ea4140da-ba9e-4181-a6b8-df0776b1f59c',
@@ -40,10 +49,56 @@ describe('TournamentsController (e2e)', () => {
     }),
   };
 
+  const players: Player[] = [];
+  const playersRepositoryMock = {
+    findOne: jest.fn(
+      async ({
+        where,
+      }: {
+        where: Partial<Pick<Player, 'id' | 'email' | 'username'>>;
+      }): Promise<Player | null> => {
+        if (where.id) {
+          return players.find((player) => player.id === where.id) ?? null;
+        }
+        if (where.email) {
+          return players.find((player) => player.email === where.email) ?? null;
+        }
+        if (where.username) {
+          return players.find((player) => player.username === where.username) ?? null;
+        }
+        return null;
+      },
+    ),
+    create: jest.fn((payload: Partial<Player>): Player => payload as Player),
+    save: jest.fn(async (player: Player): Promise<Player> => {
+      const savedPlayer: Player = {
+        ...player,
+        id: player.id ?? '11111111-1111-4111-8111-111111111111',
+        createdAt: player.createdAt ?? new Date(),
+        tournaments: player.tournaments ?? [],
+        matchesAsPlayer1: player.matchesAsPlayer1 ?? [],
+        matchesAsPlayer2: player.matchesAsPlayer2 ?? [],
+        matchesWon: player.matchesWon ?? [],
+      };
+      players.push(savedPlayer);
+      return savedPlayer;
+    }),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [TournamentsController],
-      providers: [{ provide: TournamentsService, useValue: tournamentsServiceMock }],
+      imports: [
+        PassportModule,
+        JwtModule.register({ secret: 'super_secret_key', signOptions: { expiresIn: '1d' } }),
+      ],
+      controllers: [AuthController, TournamentsController],
+      providers: [
+        AuthService,
+        JwtStrategy,
+        { provide: ConfigService, useValue: { get: (_key: string, fallback: string) => fallback } },
+        { provide: getRepositoryToken(Player), useValue: playersRepositoryMock },
+        { provide: TournamentsService, useValue: tournamentsServiceMock },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -71,6 +126,40 @@ describe('TournamentsController (e2e)', () => {
     expect(response.body.path).toBe('/tournaments?status=pending');
   });
 
+  it('POST /auth/register returns 201 and a valid JWT', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/register').send({
+      username: 'aya',
+      email: 'aya@example.com',
+      password: 'VeryStrongPass1',
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.user.email).toBe('aya@example.com');
+    expect(response.body.data.accessToken).toBeDefined();
+    accessToken = response.body.data.accessToken;
+  });
+
+  it('POST /auth/login returns 201', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'aya@example.com',
+      password: 'VeryStrongPass1',
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.accessToken).toBeDefined();
+  });
+
+  it('POST /auth/register validates payload', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        username: '',
+        email: 'invalid-email',
+        password: '123',
+      })
+      .expect(400);
+  });
+
   it('GET /tournaments/:id', async () => {
     const response = await request(app.getHttpServer())
       .get(`/tournaments/${tournament.id}`)
@@ -95,7 +184,7 @@ describe('TournamentsController (e2e)', () => {
   it('POST /tournaments with token returns 201', async () => {
     const response = await request(app.getHttpServer())
       .post('/tournaments')
-      .set('Authorization', 'Bearer test-token')
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({
         name: 'Spring Cup',
         maxPlayers: 16,
@@ -111,7 +200,7 @@ describe('TournamentsController (e2e)', () => {
   it('PUT /tournaments/:id with token returns 200', async () => {
     const response = await request(app.getHttpServer())
       .put(`/tournaments/${tournament.id}`)
-      .set('Authorization', 'Bearer test-token')
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({ name: 'Spring Cup Updated' })
       .expect(200);
 
@@ -121,8 +210,7 @@ describe('TournamentsController (e2e)', () => {
   it('POST /tournaments/:id/join with token returns 201', async () => {
     const response = await request(app.getHttpServer())
       .post(`/tournaments/${tournament.id}/join`)
-      .set('Authorization', 'Bearer test-token')
-      .send({ playerId: '2a1fbb0c-cd4a-40ea-95ca-d1f9e86a3229' })
+      .set('Authorization', `Bearer ${accessToken}`)
       .expect(201);
 
     expect(response.body.data.players).toHaveLength(1);
@@ -131,7 +219,7 @@ describe('TournamentsController (e2e)', () => {
   it('DELETE /tournaments/:id with token returns 204', async () => {
     await request(app.getHttpServer())
       .delete(`/tournaments/${tournament.id}`)
-      .set('Authorization', 'Bearer test-token')
+      .set('Authorization', `Bearer ${accessToken}`)
       .expect(204);
   });
 });

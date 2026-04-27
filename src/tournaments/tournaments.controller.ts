@@ -9,13 +9,14 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ResponseTransformInterceptor } from '../common/interceptors/response-transform.interceptor';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
-import { JoinTournamentDto } from './dto/join-tournament.dto';
 import { ListTournamentsQueryDto } from './dto/list-tournaments.query.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
 import { TournamentsService } from './tournaments.service';
@@ -61,8 +62,8 @@ export class TournamentsController {
   @UseGuards(JwtAuthGuard)
   joinTournament(
     @Param('id', new ParseUUIDPipe()) tournamentId: string,
-    @Body() body: JoinTournamentDto,
+    @Req() request: AuthenticatedRequest,
   ) {
-    return this.tournamentsService.joinTournament(tournamentId, body.playerId);
+    return this.tournamentsService.joinTournament(tournamentId, request.user.id);
   }
 }

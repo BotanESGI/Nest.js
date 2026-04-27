@@ -5,6 +5,7 @@ import { Game } from './database/entities/game.entity';
 import { Match } from './database/entities/match.entity';
 import { Player } from './database/entities/player.entity';
 import { Tournament } from './database/entities/tournament.entity';
+import { AuthModule } from './auth/auth.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 
 @Module({
@@ -23,9 +24,10 @@ import { TournamentsModule } from './tournaments/tournaments.module';
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_NAME', 'tournaments_db'),
         entities: [Tournament, Player, Match, Game],
-        synchronize: true,
+        synchronize: configService.get<string>('NODE_ENV') !== 'production',
       }),
     }),
+    AuthModule,
     TournamentsModule,
   ],
 })
