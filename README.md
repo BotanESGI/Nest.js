@@ -2,6 +2,26 @@
 
 # Jeux Vidéo
 
+## Lancement rapide (Docker)
+
+```bash
+docker compose up -d
+```
+
+Services disponibles :
+
+- API Nest.js : `http://localhost:3000`
+- PostgreSQL : `localhost:5432`
+- Adminer : `http://localhost:8080`
+
+Connexion Adminer :
+
+- Système : `PostgreSQL`
+- Serveur : `db`
+- Utilisateur : `postgres`
+- Mot de passe : `postgres`
+- Base de données : `tournaments_db`
+
 ## Objectif du projet
 
 #### Développer une API REST permettant de gérer des tournois de jeux
@@ -20,31 +40,31 @@
 
 ## Phase 3 : Authentification et sécurité
 
-#### Création d'un nouveau projet Nest.js avec Docker Compose
+#### Création d'un nouveau projet Nest.js avec Docker Compose ✅
 
 #### Structure en modules, contrôleurs et services
 
-#### Configuration d'une base de données PostgreSQL via Docker
+#### Configuration d'une base de données PostgreSQL via Docker ✅
 
 #### Compose
 
 #### Points d'entrée HTTP de base pour la gestion des entités
 
-#### Création des entités Tournament, Player, Match et Game via
+#### 🟢 Création des entités Tournament, Player, Match et Game via ✅
 
-#### TypeORM
+#### TypeORM ✅
 
-#### Implémentation de la validation des données avec class-validator
+#### Implémentation de la validation des données avec class-validator ✅
 
-#### Relations entre les entités (One-to-Many, Many-to-Many)
+#### Relations entre les entités (One-to-Many, Many-to-Many) ✅
 
-#### Opérations CRUD complètes pour chaque entité
+#### Opérations CRUD complètes pour chaque entité ✅
 
 #### Implémentation de l'authentification JWT avec Passport
 
-#### Guards pour protéger les routes sensibles
+#### Guards pour protéger les routes sensibles ✅
 
-#### Interceptors pour transformer les réponses
+#### Interceptors pour transformer les réponses ✅
 
 #### Pipes pour la validation et transformation des données
 
@@ -126,17 +146,17 @@ genre: string;
 
 #### POST /auth/login - Connexion et récupération du JWT
 
-#### GET /tournaments - Liste des tournois (filtrable par statut)
+#### GET /tournaments - Liste des tournois (filtrable par statut) ✅
 
-#### POST /tournaments - Création d'un tournoi (authentifié)
+#### POST /tournaments - Création d'un tournoi (authentifié) ✅
 
-#### GET /tournaments/:id - Détails d'un tournoi
+#### GET /tournaments/:id - Détails d'un tournoi ✅
 
-#### PUT /tournaments/:id - Modification d'un tournoi (authentifié)
+#### PUT /tournaments/:id - Modification d'un tournoi (authentifié) ✅
 
-#### DELETE /tournaments/:id - Suppression d'un tournoi (authentifié)
+#### DELETE /tournaments/:id - Suppression d'un tournoi (authentifié) ✅
 
-#### POST /tournaments/:id/join - Inscription à un tournoi (authentifié)
+#### POST /tournaments/:id/join - Inscription à un tournoi (authentifié) ✅
 
 #### GET /players - Liste des joueurs
 
@@ -167,9 +187,9 @@ genre: string;
 
 #### Deux environnement docker (dev & prod)
 
-#### Base de données PostgreSQL avec TypeORM
+#### 🟢 Base de données PostgreSQL avec TypeORM ✅
 
-#### Validation des données entrantes
+#### Validation des données entrantes ✅
 
 #### Authentification JWT fonctionnelle
 
@@ -274,15 +294,3 @@ genre: string;
 #### Documentation 1 pt Swagger/OpenAPI
 
 #### Tests 0.5 pt/module Tests unitaires
-
-## Ressources
-
-#### Documentation Nest.js
-
-#### TypeORM Documentation
-
-#### Passport JWT
-
-#### Docker Documentation
-
-

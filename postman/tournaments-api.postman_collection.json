@@ -1,0 +1,257 @@
+{
+  "info": {
+    "_postman_id": "7af9684c-1bf4-4685-a28c-c56a90762f46",
+    "name": "NestJS Tournaments API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection Postman pour tester les routes tournaments et auth."
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"player_b\",\n  \"email\": \"player_b@example.com\",\n  \"password\": \"Password123!\",\n  \"avatar\": \"https://example.com/avatar.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"player_b@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tournaments",
+      "item": [
+        {
+          "name": "Get Tournaments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tournaments?status={{status}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tournaments"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{status}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tournament By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tournament (Auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Spring Cup\",\n  \"maxPlayers\": 16,\n  \"startDate\": \"2026-05-10T18:00:00.000Z\",\n  \"status\": \"pending\",\n  \"gameId\": \"{{gameId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tournaments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tournaments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tournament (Auth)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Spring Cup Updated\",\n  \"maxPlayers\": 32,\n  \"status\": \"in_progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tournament (Auth)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Join Tournament (Auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{playerId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}/join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}",
+                "join"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "status",
+      "value": "pending"
+    },
+    {
+      "key": "tournamentId",
+      "value": ""
+    },
+    {
+      "key": "playerId",
+      "value": ""
+    },
+    {
+      "key": "gameId",
+      "value": ""
+    }
+  ]
+}

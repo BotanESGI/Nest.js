@@ -5,6 +5,7 @@ import { Game } from './database/entities/game.entity';
 import { Match } from './database/entities/match.entity';
 import { Player } from './database/entities/player.entity';
 import { Tournament } from './database/entities/tournament.entity';
+import { TournamentsModule } from './tournaments/tournaments.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { Tournament } from './database/entities/tournament.entity';
         synchronize: true,
       }),
     }),
+    TournamentsModule,
   ],
 })
 export class AppModule {}
