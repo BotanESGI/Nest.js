@@ -97,8 +97,8 @@ Les tests d’intégration couvrent toutes les routes exposées:
 
 ```json
 {
-  "username": "aya",
-  "email": "aya@example.com",
+  "username": "user",
+  "email": "user@example.com",
   "password": "VeryStrongPass1"
 }
 ```
@@ -109,7 +109,7 @@ Les tests d’intégration couvrent toutes les routes exposées:
 
 ```json
 {
-  "email": "aya@example.com",
+  "email": "user@example.com",
   "password": "VeryStrongPass1"
 }
 ```
@@ -123,9 +123,8 @@ Réponse (register/login):
     "expiresIn": "1d",
     "user": {
       "id": "uuid",
-      "username": "aya",
-      "email": "aya@example.com",
-      "role": "admin"
+      "username": "user",
+      "email": "user@example.com"
     }
   }
 }
