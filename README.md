@@ -1,251 +1,296 @@
-# API Tournois Nest.js (JWT + PostgreSQL + Docker)
+# Projet Nest.js : Gestionnaire de Tournois de
 
-API REST de gestion de tournois avec authentification JWT via Passport, validation stricte des entrées, base PostgreSQL (TypeORM) et environnements Docker `dev` et `prod`.
+# Jeux Vidéo
 
-## Stack technique
-
-- Nest.js + TypeScript (`strict: true`)
-- Authentification: `@nestjs/passport`, `passport-jwt`, `@nestjs/jwt`
-- Base de données: PostgreSQL + TypeORM
-- Validation: `class-validator` + `ValidationPipe` globale
-- Tests d’intégration: Jest + Supertest
-- Conteneurisation: Docker + Docker Compose
-
-## Variables d’environnement
-
-Le projet lit les variables depuis `.env` (ou `.env.example` par défaut).
-
-```env
-PORT=3000
-NODE_ENV=development
-DB_HOST=db
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=tournaments_db
-JWT_SECRET=super_secret_key
-JWT_EXPIRES_IN=1d
-```
-
-## Lancement en développement (Docker)
+## Lancement rapide (Docker)
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 ```
 
-Services disponibles:
+Services disponibles :
 
-- API: `http://localhost:3000`
-- PostgreSQL: `localhost:5432`
-- Adminer: `http://localhost:8081`
+- API Nest.js : `http://localhost:3000`
+- PostgreSQL : `localhost:5432`
+- Adminer : `http://localhost:8080`
 
-Arrêter l’environnement dev:
+Connexion Adminer :
 
-```bash
-docker compose down
+- Système : `PostgreSQL`
+- Serveur : `db`
+- Utilisateur : `postgres`
+- Mot de passe : `postgres`
+- Base de données : `tournaments_db`
+
+## Objectif du projet
+
+#### Développer une API REST permettant de gérer des tournois de jeux
+
+#### vidéo. Cette application permettra aux utilisateurs de créer des tournois,
+
+#### de s'y inscrire, de gérer les matchs et de suivre les résultats en temps
+
+#### réel.
+
+## Fonctionnalités attendues
+
+## Structure de base
+
+## Entités et validation
+
+## Phase 3 : Authentification et sécurité
+
+#### Création d'un nouveau projet Nest.js avec Docker Compose ✅
+
+#### Structure en modules, contrôleurs et services ✅
+
+#### Configuration d'une base de données PostgreSQL via Docker ✅
+
+#### Compose
+
+#### Points d'entrée HTTP de base pour la gestion des entités ✅
+
+#### 🟢 Création des entités Tournament, Player, Match et Game via ✅
+
+#### TypeORM ✅
+
+#### Implémentation de la validation des données avec class-validator ✅
+
+#### Relations entre les entités (One-to-Many, Many-to-Many) ✅
+
+#### Opérations CRUD complètes pour chaque entité ✅
+
+#### Implémentation de l'authentification JWT avec Passport ✅
+
+#### Guards pour protéger les routes sensibles ✅
+
+#### Interceptors pour transformer les réponses ✅
+
+#### Pipes pour la validation et transformation des données ✅
+
+
+### Phase 4 : Déploiement
+
+## Entités du domaine
+
+### Tournament (Tournoi)
+
+### Player
+
+### Match
+
+#### Dockerfile optimisé pour la production ✅
+
+#### Image Docker fonctionnelle et déployable ✅
+
+##### {
+
 ```
-
-## Lancement en production (Docker)
-
-```bash
-docker compose -f docker-compose.prod.yml up --build -d
-```
-
-Cet environnement utilise le `Dockerfile` de production (build multi-stage).
-
-Arrêter l’environnement prod:
-
-```bash
-docker compose -f docker-compose.prod.yml down
-```
-
-## Lancement local (sans Docker)
-
-Prérequis: PostgreSQL local disponible.
-
-```bash
-npm ci
-npm run start:dev
-```
-
-## Qualité et tests
-
-```bash
-npm run lint
-npm run build
-npm run test:e2e
-```
-
-Les tests d’intégration couvrent toutes les routes exposées:
-
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /tournaments`
-- `GET /tournaments/:id`
-- `POST /tournaments`
-- `PUT /tournaments/:id`
-- `DELETE /tournaments/:id`
-- `POST /tournaments/:id/join`
-- `GET /games`
-- `POST /games`
-
-## Authentification JWT
-
-### Inscription
-
-`POST /auth/register`
-
-```json
-{
-  "username": "user",
-  "email": "user@example.com",
-  "password": "VeryStrongPass1"
+id: string;
+name: string;
+game: string;
+maxPlayers: number;
+startDate: Date;
+status: 'pending' | 'in_progress' | 'completed';
+createdAt: Date;
 }
 ```
+##### {
 
-### Connexion
-
-`POST /auth/login`
-
-```json
-{
-  "email": "user@example.com",
-  "password": "VeryStrongPass1"
+```
+id: string;
+username: string;
+email: string;
+password: string;
+avatar: string;
+createdAt: Date;
 }
 ```
+##### {
 
-Réponse (register/login):
+```
+id: string;
+tournamentId: string;
+player1Id: string;
+player2Id: string;
+winnerId: string | null;
+```
 
-```json
-{
-  "data": {
-    "accessToken": "<jwt>",
-    "expiresIn": "1d",
-    "user": {
-      "id": "uuid",
-      "username": "user",
-      "email": "user@example.com"
-    }
-  }
+### Game
+
+## Routes HTTP attendues
+
+### Authentication
+
+### Tournaments
+
+### Players
+
+```
+score: string;
+round: number;
+status: 'pending' | 'in_progress' | 'completed';
 }
 ```
+##### {
 
-### Utiliser le token
-
-Ajouter l’en-tête HTTP sur les routes protégées:
-
-```http
-Authorization: Bearer <jwt>
 ```
-
-Le premier utilisateur inscrit reçoit automatiquement le rôle `admin`, les suivants le rôle `user`.
-Si la base contient déjà des utilisateurs (volume Docker persistant), un nouveau compte ne sera pas `admin`.
-
-## Routes Tournois
-
-- `GET /tournaments` (filtre optionnel `status`)
-- `GET /tournaments/:id`
-- `POST /tournaments` (protégée JWT)
-- `PUT /tournaments/:id` (protégée JWT)
-- `DELETE /tournaments/:id` (protégée JWT)
-- `POST /tournaments/:id/join` (protégée JWT)
-
-Exemple de création:
-
-```json
-{
-  "name": "Spring Cup",
-  "maxPlayers": 16,
-  "startDate": "2026-05-10T18:00:00.000Z",
-  "status": "pending",
-  "gameId": "ea4140da-ba9e-4181-a6b8-df0776b1f59c"
+id: string;
+name: string;
+publisher: string;
+releaseDate: Date;
+genre: string;
 }
 ```
+#### POST /auth/register - Inscription d'un joueur ✅
 
-## Routes Games
+#### POST /auth/login - Connexion et récupération du JWT ✅
 
-- `GET /games` (publique)
-- `POST /games` (protégée JWT + rôle admin)
+#### GET /tournaments - Liste des tournois (filtrable par statut) ✅
 
-Exemple de création:
+#### POST /tournaments - Création d'un tournoi (authentifié) ✅
 
-```json
-{
-  "name": "Counter Strike 2",
-  "publisher": "Valve",
-  "releaseDate": "2023-09-27",
-  "genre": "FPS"
-}
-```
+#### GET /tournaments/:id - Détails d'un tournoi ✅
 
-## Scénario de test manuel (games + rôles)
+#### PUT /tournaments/:id - Modification d'un tournoi (authentifié) ✅
 
-### 1) Redémarrer proprement l'environnement
+#### DELETE /tournaments/:id - Suppression d'un tournoi (authentifié) ✅
 
-```bash
-docker compose down -v
-docker compose up --build -d
-```
+#### POST /tournaments/:id/join - Inscription à un tournoi (authentifié) ✅
 
-### 2) Créer le premier utilisateur (admin attendu)
+#### GET /players - Liste des joueurs
 
-```bash
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username":"admin1",
-    "email":"admin1@example.com",
-    "password":"VeryStrongPass1"
-  }'
-```
+#### GET /players/:id - Profil d'un joueur
 
-Vérifier dans la réponse: `data.user.role = "admin"`.
+#### GET /players/:id/tournaments - Tournois participés par un joueur
 
-### 3) Créer le second utilisateur (user attendu)
 
-```bash
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username":"user1",
-    "email":"user1@example.com",
-    "password":"VeryStrongPass1"
-  }'
-```
+### Matches
 
-Vérifier dans la réponse: `data.user.role = "user"`.
+### Games
 
-### 4) Tester les routes games
+## Exigences techniques
 
-- `GET /games` sans token -> `200`
-- `POST /games` sans token -> `401`
-- `POST /games` avec token `user` -> `403`
-- `POST /games` avec token `admin` -> `201`
+## Malus
 
-Exemple payload:
+#### GET /tournaments/:id/matches - Liste des matchs d'un tournoi
 
-```json
-{
-  "name": "Counter Strike 2",
-  "publisher": "Valve",
-  "releaseDate": "2023-09-27",
-  "genre": "FPS"
-}
-```
+#### POST /matches/:id/result - Soumettre un résultat (authentifié)
 
-### 5) Tester la validation DTO
+#### GET /games - Liste des jeux ✅
 
-Avec un token admin, envoyer un payload invalide (champs vides / date invalide) sur `POST /games` -> `400`.
+#### POST /games - Ajouter un jeu (authentifié, admin) ✅
 
-## Architecture
+#### Utilisation de TypeScript en mode strict ✅
 
-- `src/auth`: module d’authentification (controller, service, stratégie JWT)
-- `src/tournaments`: routes métier tournois
-- `src/games`: routes métier jeux
-- `src/database/entities`: entités TypeORM
-- `src/common`: guards JWT/admin et interceptor de transformation des réponses
+#### Utilisation de Docker obligatoire ✅
 
-## Remarques
+#### Deux environnement docker (dev & prod) ✅
 
-- La validation des payloads est globale (`whitelist`, `forbidNonWhitelisted`, `transform`).
-- En production, `synchronize` TypeORM est désactivé automatiquement.
+#### 🟢 Base de données PostgreSQL avec TypeORM ✅
+
+#### Validation des données entrantes ✅
+
+#### Authentification JWT fonctionnelle ✅
+
+#### Code propre et structuré selon l'architecture Nest.js ✅
+
+#### Dockerfile fonctionnel pour le déploiement ✅
+
+#### README.md avec les instructions d'installation et d'utilisation ✅
+
+#### Test d'intégration obligatoire pour toutes les routes ✅
+
+#### Pas de lint, ou le code contient des erreurs d'analyse de code statique
+
+#### Pas de bases de données, ou différentes de PostgreSQL
+
+#### TypeORM absent du projet
+
+#### Les routes ne valident pas les données reçues
+
+#### L'authentification n'est pas fonctionnelle ou est bugguée
+
+#### Le projet ne démarre pas malgré les instructions
+
+#### Le README ne contient pas les instructions exhaustive pour lancer le
+
+#### projet
+
+#### Un service externe est utilisé (Render, DynamoDB, ...)
+
+#### Pas de malus pour l'intelligence artificielle
+
+
+## Bonus (points supplémentaires)
+
+## Barème de notation (sur 20 points)
+
+### Partie fonctionnelle (15 points)
+
+#### Critère Points Description
+
+#### Structure du projet 2 pts Utilisation correcte des modules,
+
+#### contrôleurs et services
+
+#### Modèle de données 2 pts Entités bien définies avec relations
+
+#### TypeORM
+
+#### CRUD complet 2 pts Opérations Create, Read, Update,
+
+#### Delete fonctionnelles
+
+#### Validation des
+
+#### données
+
+#### 1.5 pts Utilisation de class-validator et des DTOs
+
+#### Base de données 2 pts Persistence fonctionnelle avec
+
+#### PostgreSQL/TypeORM
+
+#### Authentification 2 pts JWT fonctionnel avec Guards
+
+#### Interceptors 1 pt Transformation correcte des réponses
+
+#### Pipes 1 pt Validation et transformation des
+
+#### paramètres
+
+#### Dockerfile 1 pt Image Docker fonctionnelle et optimisée
+
+#### Code quality 0.5 pts Code propre, typé et maintenable
+
+### Bonus (5 points maximum)
+
+#### 1. WebSocket en temps réel (+1 point) : Notifications lors des
+
+#### changements de statut des tournois
+
+#### 2. Système de brackets (+1.5 points) : Génération automatique des
+
+#### brackets pour les tournois
+
+#### 3. Statistiques avancées (+1 point) : Classements, statistiques par
+
+#### joueur
+
+#### 4. Documentation API (+1 point) : Documentation Swagger/OpenAPI
+
+#### 5. Microservices (+1 point) : Avec le module @nestjs/microservices
+
+
+#### Bonus Points Description
+
+#### WebSocket 1 pt Temps réel
+
+#### Brackets 1.5 pts Génération automatique
+
+#### Statistiques 1 pt Classements avancés
+
+#### Documentation 1 pt Swagger/OpenAPI
+
+#### Tests 0.5 pt/module Tests unitaires
