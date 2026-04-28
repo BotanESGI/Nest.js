@@ -34,6 +34,11 @@ export class PlayersController {
     return this.playersService.findOne(id);
   }
 
+  @Get(':id/tournaments')
+  findTournaments(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.playersService.findTournaments(id);
+  }
+
   @Post()
   create(@Body() createDto: CreatePlayerDto) {
     return this.playersService.create(createDto);

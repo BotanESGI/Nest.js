@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { Player, PlayerRole } from '../database/entities/player.entity';
+import { Tournament } from '../database/entities/tournament.entity';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 
@@ -34,6 +35,20 @@ export class PlayersService {
     }
 
     return this.toSafePlayer(player);
+  }
+
+  async findTournaments(id: string): Promise<Tournament[]> {
+    const player = await this.playersRepository.findOne({
+      where: { id },
+      relations: { tournaments: { game: true } },
+      order: { tournaments: { createdAt: 'DESC' } },
+    });
+
+    if (!player) {
+      throw new NotFoundException(`Player ${id} not found`);
+    }
+
+    return player.tournaments ?? [];
   }
 
   async create(dto: CreatePlayerDto): Promise<SafePlayer> {

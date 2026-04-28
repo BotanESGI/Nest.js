@@ -153,6 +153,7 @@ describe('TournamentsController (e2e)', () => {
       matchesWon: [],
     }),
     remove: jest.fn().mockResolvedValue(undefined),
+    findTournaments: jest.fn().mockResolvedValue([tournament]),
   };
 
   const players: Player[] = [];
@@ -582,6 +583,16 @@ describe('TournamentsController (e2e)', () => {
       .expect(200);
 
     expect(response.body.data.id).toBe('11111111-1111-4111-8111-111111111111');
+  });
+
+  it('GET /players/:id/tournaments with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/players/11111111-1111-4111-8111-111111111111/tournaments`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(200);
+
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].id).toBe(tournament.id);
   });
 
   it('POST /players with admin token returns 201', async () => {
