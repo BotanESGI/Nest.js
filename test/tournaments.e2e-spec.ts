@@ -12,6 +12,8 @@ import { Game } from '../src/database/entities/game.entity';
 import { Player, PlayerRole } from '../src/database/entities/player.entity';
 import { GamesController } from '../src/games/games.controller';
 import { GamesService } from '../src/games/games.service';
+import { PlayersController } from '../src/players/players.controller';
+import { PlayersService } from '../src/players/players.service';
 import { TournamentStatus } from '../src/database/entities/tournament.entity';
 import { TournamentsController } from '../src/tournaments/tournaments.controller';
 import { TournamentsService } from '../src/tournaments/tournaments.service';
@@ -66,6 +68,60 @@ describe('TournamentsController (e2e)', () => {
     }),
   };
 
+  const playersServiceMock: Partial<PlayersService> = {
+    findAll: jest.fn().mockResolvedValue([
+      {
+        id: '11111111-1111-4111-8111-111111111111',
+        username: 'aya',
+        email: 'aya@example.com',
+        role: PlayerRole.ADMIN,
+        avatar: null,
+        createdAt: new Date('2026-04-27T12:33:35.272Z'),
+        tournaments: [],
+        matchesAsPlayer1: [],
+        matchesAsPlayer2: [],
+        matchesWon: [],
+      },
+    ]),
+    findOne: jest.fn().mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      username: 'aya',
+      email: 'aya@example.com',
+      role: PlayerRole.ADMIN,
+      avatar: null,
+      createdAt: new Date('2026-04-27T12:33:35.272Z'),
+      tournaments: [],
+      matchesAsPlayer1: [],
+      matchesAsPlayer2: [],
+      matchesWon: [],
+    }),
+    create: jest.fn().mockResolvedValue({
+      id: '33333333-3333-4333-8333-333333333333',
+      username: 'new-player',
+      email: 'new-player@example.com',
+      role: PlayerRole.USER,
+      avatar: null,
+      createdAt: new Date('2026-04-28T09:00:00.000Z'),
+      tournaments: [],
+      matchesAsPlayer1: [],
+      matchesAsPlayer2: [],
+      matchesWon: [],
+    }),
+    update: jest.fn().mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      username: 'aya-updated',
+      email: 'aya@example.com',
+      role: PlayerRole.ADMIN,
+      avatar: null,
+      createdAt: new Date('2026-04-27T12:33:35.272Z'),
+      tournaments: [],
+      matchesAsPlayer1: [],
+      matchesAsPlayer2: [],
+      matchesWon: [],
+    }),
+    remove: jest.fn().mockResolvedValue(undefined),
+  };
+
   const players: Player[] = [];
   const playersRepositoryMock = {
     findOne: jest.fn(
@@ -114,7 +170,7 @@ describe('TournamentsController (e2e)', () => {
         PassportModule,
         JwtModule.register({ secret: 'super_secret_key', signOptions: { expiresIn: '1d' } }),
       ],
-      controllers: [AuthController, TournamentsController, GamesController],
+      controllers: [AuthController, TournamentsController, GamesController, PlayersController],
       providers: [
         AuthService,
         JwtStrategy,
@@ -122,6 +178,7 @@ describe('TournamentsController (e2e)', () => {
         { provide: getRepositoryToken(Player), useValue: playersRepositoryMock },
         { provide: TournamentsService, useValue: tournamentsServiceMock },
         { provide: GamesService, useValue: gamesServiceMock },
+        { provide: PlayersService, useValue: playersServiceMock },
       ],
     }).compile();
 
@@ -319,5 +376,67 @@ describe('TournamentsController (e2e)', () => {
         genre: '',
       })
       .expect(400);
+  });
+
+  it('GET /players without token returns 401', async () => {
+    await request(app.getHttpServer()).get('/players').expect(401);
+  });
+
+  it('GET /players with non-admin token returns 403', async () => {
+    await request(app.getHttpServer())
+      .get('/players')
+      .set('Authorization', `Bearer ${userAccessToken}`)
+      .expect(403);
+  });
+
+  it('GET /players with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/players')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(200);
+
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].email).toBe('aya@example.com');
+  });
+
+  it('GET /players/:id with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/players/11111111-1111-4111-8111-111111111111')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(200);
+
+    expect(response.body.data.id).toBe('11111111-1111-4111-8111-111111111111');
+  });
+
+  it('POST /players with admin token returns 201', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/players')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({
+        username: 'new-player',
+        email: 'new-player@example.com',
+        password: 'VeryStrongPass1',
+      })
+      .expect(201);
+
+    expect(response.body.data.email).toBe('new-player@example.com');
+    expect(response.body.data.password).toBeUndefined();
+  });
+
+  it('PATCH /players/:id with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .patch('/players/11111111-1111-4111-8111-111111111111')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({ username: 'aya-updated' })
+      .expect(200);
+
+    expect(response.body.data.username).toBe('aya-updated');
+  });
+
+  it('DELETE /players/:id with admin token returns 204', async () => {
+    await request(app.getHttpServer())
+      .delete('/players/11111111-1111-4111-8111-111111111111')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(204);
   });
 });
