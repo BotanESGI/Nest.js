@@ -71,4 +71,10 @@ export class TournamentsController {
   ) {
     return this.tournamentsService.joinTournament(tournamentId, request.user.id);
   }
+
+  @Post(':id/bracket')
+  @UseGuards(JwtAuthGuard)
+  generateBracket(@Param('id', new ParseUUIDPipe()) tournamentId: string) {
+    return this.tournamentsService.generateBracket(tournamentId);
+  }
 }

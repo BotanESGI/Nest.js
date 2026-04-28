@@ -224,6 +224,30 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Generate Bracket (Auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tournaments/{{tournamentId}}/bracket",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}",
+                "bracket"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
