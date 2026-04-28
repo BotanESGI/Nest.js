@@ -32,9 +32,7 @@ Développer une API REST permettant de gérer des tournois de jeux vidéo. Cette
 
 - Structure en modules, contrôleurs et services ✅
 
-- Configuration d'une base de données PostgreSQL via Docker ✅
-
-- Compose
+- Configuration d'une base de données PostgreSQL via Docker Compose ✅
 
 - Points d'entrée HTTP de base pour la gestion des entités ✅
 
@@ -151,7 +149,7 @@ genre: string;
 - Utilisation de TypeScript en mode strict ✅
 - Utilisation de Docker obligatoire ✅
 - Deux environnements Docker (dev & prod) ✅
-- 🟢 Base de données PostgreSQL avec TypeORM ✅
+- Base de données PostgreSQL avec TypeORM ✅
 - Validation des données entrantes ✅
 - Authentification JWT fonctionnelle ✅
 - Code propre et structuré selon l'architecture Nest.js ✅
