@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Game } from '../database/entities/game.entity';
 import { Player } from '../database/entities/player.entity';
+import { Match } from '../database/entities/match.entity';
 import { Tournament } from '../database/entities/tournament.entity';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { ListTournamentsQueryDto } from './dto/list-tournaments.query.dto';
@@ -21,6 +22,8 @@ export class TournamentsService {
     private readonly gamesRepository: Repository<Game>,
     @InjectRepository(Player)
     private readonly playersRepository: Repository<Player>,
+    @InjectRepository(Match)
+    private readonly matchesRepository: Repository<Match>,
   ) {}
 
   async findAll(query: ListTournamentsQueryDto): Promise<Tournament[]> {
@@ -44,6 +47,21 @@ export class TournamentsService {
     }
 
     return tournament;
+  }
+
+  async findMatches(tournamentId: string): Promise<Match[]> {
+    const tournament = await this.tournamentsRepository.findOne({
+      where: { id: tournamentId },
+    });
+    if (!tournament) {
+      throw new NotFoundException(`Tournament ${tournamentId} not found`);
+    }
+
+    return this.matchesRepository.find({
+      where: { tournament: { id: tournamentId } },
+      relations: { tournament: { game: true }, player1: true, player2: true, winner: true },
+      order: { round: 'ASC' },
+    });
   }
 
   async create(createDto: CreateTournamentDto): Promise<Tournament> {

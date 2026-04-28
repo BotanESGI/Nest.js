@@ -7,6 +7,7 @@ import { Player } from './database/entities/player.entity';
 import { Tournament } from './database/entities/tournament.entity';
 import { AuthModule } from './auth/auth.module';
 import { GamesModule } from './games/games.module';
+import { MatchesModule } from './matches/matches.module';
 import { PlayersModule } from './players/players.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 
@@ -31,6 +32,7 @@ import { TournamentsModule } from './tournaments/tournaments.module';
     }),
     AuthModule,
     GamesModule,
+    MatchesModule,
     PlayersModule,
     TournamentsModule,
   ],

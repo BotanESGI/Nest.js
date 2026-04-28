@@ -36,6 +36,11 @@ export class TournamentsController {
     return this.tournamentsService.findOne(id);
   }
 
+  @Get(':id/matches')
+  findMatches(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.tournamentsService.findMatches(id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   create(@Body() createDto: CreateTournamentDto) {

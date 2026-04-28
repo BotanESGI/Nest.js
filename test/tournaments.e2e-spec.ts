@@ -9,9 +9,12 @@ import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
 import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
 import { Game } from '../src/database/entities/game.entity';
+import { Match, MatchStatus } from '../src/database/entities/match.entity';
 import { Player, PlayerRole } from '../src/database/entities/player.entity';
 import { GamesController } from '../src/games/games.controller';
 import { GamesService } from '../src/games/games.service';
+import { MatchesController } from '../src/matches/matches.controller';
+import { MatchesService } from '../src/matches/matches.service';
 import { PlayersController } from '../src/players/players.controller';
 import { PlayersService } from '../src/players/players.service';
 import { TournamentStatus } from '../src/database/entities/tournament.entity';
@@ -44,9 +47,21 @@ describe('TournamentsController (e2e)', () => {
     matches: [],
   };
 
+  const match: Match = {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    round: 1,
+    status: MatchStatus.PENDING,
+    score: null,
+    tournament: tournament as any,
+    player1: { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' } as Player,
+    player2: { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' } as Player,
+    winner: null,
+  };
+
   const tournamentsServiceMock: Partial<TournamentsService> = {
     findAll: jest.fn().mockResolvedValue([tournament]),
     findOne: jest.fn().mockResolvedValue(tournament),
+    findMatches: jest.fn().mockResolvedValue([match]),
     create: jest.fn().mockResolvedValue(tournament),
     update: jest.fn().mockResolvedValue({ ...tournament, name: 'Spring Cup Updated' }),
     remove: jest.fn().mockResolvedValue(undefined),
@@ -58,6 +73,7 @@ describe('TournamentsController (e2e)', () => {
 
   const gamesServiceMock: Partial<GamesService> = {
     findAll: jest.fn().mockResolvedValue([game]),
+    findOne: jest.fn().mockResolvedValue(game),
     create: jest.fn().mockResolvedValue({
       ...game,
       id: 'bcb93f2f-a31b-4e6f-9092-0a91ddfae60a',
@@ -66,6 +82,23 @@ describe('TournamentsController (e2e)', () => {
       releaseDate: new Date('2023-09-27'),
       genre: 'FPS',
     }),
+    update: jest.fn().mockResolvedValue({ ...game, name: 'Test Updated' }),
+    remove: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const matchesServiceMock: Partial<MatchesService> = {
+    findAll: jest.fn().mockResolvedValue([match]),
+    findOne: jest.fn().mockResolvedValue(match),
+    findByTournament: jest.fn().mockResolvedValue([match]),
+    create: jest.fn().mockResolvedValue(match),
+    update: jest.fn().mockResolvedValue({ ...match, status: MatchStatus.IN_PROGRESS }),
+    submitResult: jest.fn().mockResolvedValue({
+      ...match,
+      status: MatchStatus.COMPLETED,
+      score: '2-1',
+      winner: match.player1,
+    }),
+    remove: jest.fn().mockResolvedValue(undefined),
   };
 
   const playersServiceMock: Partial<PlayersService> = {
@@ -170,7 +203,13 @@ describe('TournamentsController (e2e)', () => {
         PassportModule,
         JwtModule.register({ secret: 'super_secret_key', signOptions: { expiresIn: '1d' } }),
       ],
-      controllers: [AuthController, TournamentsController, GamesController, PlayersController],
+      controllers: [
+        AuthController,
+        TournamentsController,
+        GamesController,
+        PlayersController,
+        MatchesController,
+      ],
       providers: [
         AuthService,
         JwtStrategy,
@@ -179,6 +218,7 @@ describe('TournamentsController (e2e)', () => {
         { provide: TournamentsService, useValue: tournamentsServiceMock },
         { provide: GamesService, useValue: gamesServiceMock },
         { provide: PlayersService, useValue: playersServiceMock },
+        { provide: MatchesService, useValue: matchesServiceMock },
       ],
     }).compile();
 
@@ -263,6 +303,15 @@ describe('TournamentsController (e2e)', () => {
     expect(response.body.data.id).toBe(tournament.id);
   });
 
+  it('GET /tournaments/:id/matches returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/tournaments/${tournament.id}/matches`)
+      .expect(200);
+
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].id).toBe(match.id);
+  });
+
   it('POST /tournaments without token returns 401', async () => {
     await request(app.getHttpServer())
       .post('/tournaments')
@@ -325,6 +374,14 @@ describe('TournamentsController (e2e)', () => {
     expect(response.body.data[0].id).toBe(game.id);
   });
 
+  it('GET /games/:id returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/games/${game.id}`)
+      .expect(200);
+
+    expect(response.body.data.id).toBe(game.id);
+  });
+
   it('POST /games without token returns 401', async () => {
     await request(app.getHttpServer())
       .post('/games')
@@ -376,6 +433,125 @@ describe('TournamentsController (e2e)', () => {
         genre: '',
       })
       .expect(400);
+  });
+
+  it('PATCH /games/:id without token returns 401', async () => {
+    await request(app.getHttpServer())
+      .patch(`/games/${game.id}`)
+      .send({ name: 'Test Updated' })
+      .expect(401);
+  });
+
+  it('PATCH /games/:id with non-admin token returns 403', async () => {
+    await request(app.getHttpServer())
+      .patch(`/games/${game.id}`)
+      .set('Authorization', `Bearer ${userAccessToken}`)
+      .send({ name: 'Test Updated' })
+      .expect(403);
+  });
+
+  it('PATCH /games/:id with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .patch(`/games/${game.id}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({ name: 'Test Updated' })
+      .expect(200);
+
+    expect(response.body.data.name).toBe('Test Updated');
+  });
+
+  it('DELETE /games/:id with admin token returns 204', async () => {
+    await request(app.getHttpServer())
+      .delete(`/games/${game.id}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(204);
+  });
+
+  it('POST /matches/:id/result without token returns 401', async () => {
+    await request(app.getHttpServer())
+      .post(`/matches/${match.id}/result`)
+      .send({ winnerId: match.player1.id, score: '2-1' })
+      .expect(401);
+  });
+
+  it('POST /matches/:id/result with token returns 201', async () => {
+    const response = await request(app.getHttpServer())
+      .post(`/matches/${match.id}/result`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({ winnerId: match.player1.id, score: '2-1' })
+      .expect(201);
+
+    expect(response.body.data.status).toBe(MatchStatus.COMPLETED);
+    expect(response.body.data.score).toBe('2-1');
+  });
+
+  it('POST /matches/:id/result validates payload', async () => {
+    await request(app.getHttpServer())
+      .post(`/matches/${match.id}/result`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({ winnerId: 'not-a-uuid', score: '' })
+      .expect(400);
+  });
+
+  it('GET /matches with non-admin token returns 403', async () => {
+    await request(app.getHttpServer())
+      .get('/matches')
+      .set('Authorization', `Bearer ${userAccessToken}`)
+      .expect(403);
+  });
+
+  it('GET /matches with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/matches')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(200);
+
+    expect(response.body.data).toHaveLength(1);
+  });
+
+  it('POST /matches with admin token returns 201', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/matches')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({
+        tournamentId: tournament.id,
+        player1Id: match.player1.id,
+        player2Id: match.player2.id,
+        round: 1,
+      })
+      .expect(201);
+
+    expect(response.body.data.id).toBe(match.id);
+  });
+
+  it('POST /matches validates payload', async () => {
+    await request(app.getHttpServer())
+      .post('/matches')
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({
+        tournamentId: 'not-a-uuid',
+        player1Id: 'not-a-uuid',
+        player2Id: 'not-a-uuid',
+        round: 0,
+      })
+      .expect(400);
+  });
+
+  it('PATCH /matches/:id with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .patch(`/matches/${match.id}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .send({ status: MatchStatus.IN_PROGRESS })
+      .expect(200);
+
+    expect(response.body.data.status).toBe(MatchStatus.IN_PROGRESS);
+  });
+
+  it('DELETE /matches/:id with admin token returns 204', async () => {
+    await request(app.getHttpServer())
+      .delete(`/matches/${match.id}`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(204);
   });
 
   it('GET /players without token returns 401', async () => {
