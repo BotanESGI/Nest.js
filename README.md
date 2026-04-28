@@ -193,7 +193,7 @@ genre: string;
 
 #### 3. Statistiques avancées (+1 point) : Classements, statistiques par joueur
 
-#### 4. Documentation API (+1 point) : Documentation Swagger/OpenAPI
+#### 4. Documentation API (+1 point) : Documentation Swagger/OpenAPI ✅
 
 #### 5. Microservices (+1 point) : Avec le module @nestjs/microservices
 
@@ -203,5 +203,5 @@ genre: string;
 | WebSocket | 1 pt | Temps réel |
 | Brackets ✅| 1.5 pts | Génération automatique |
 | Statistiques | 1 pt | Classements avancés |
-| Documentation | 1 pt | Swagger/OpenAPI |
+| Documentation ✅| 1 pt | Swagger/OpenAPI |
 | Tests | 0.5 pt/module | Tests unitaires |
