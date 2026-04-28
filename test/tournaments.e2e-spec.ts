@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+Testimport { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -386,6 +387,52 @@ describe('TournamentsController (e2e)', () => {
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].round).toBe(1);
     expect(response.body.data[0].status).toBe(MatchStatus.PENDING);
+  });
+
+  it('POST /tournaments/:id/bracket returns 404 when tournament does not exist', async () => {
+    (tournamentsServiceMock.generateBracket as jest.Mock).mockRejectedValueOnce(
+      new NotFoundException('Tournament not found'),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/tournaments/${tournament.id}/bracket`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(404);
+  });
+
+  it('POST /tournaments/:id/bracket returns 400 when fewer than 2 players', async () => {
+    (tournamentsServiceMock.generateBracket as jest.Mock).mockRejectedValueOnce(
+      new BadRequestException('At least 2 players are required to generate a bracket'),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/tournaments/${tournament.id}/bracket`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(400);
+  });
+
+  it('POST /tournaments/:id/bracket returns 400 when player count is not power of 2', async () => {
+    (tournamentsServiceMock.generateBracket as jest.Mock).mockRejectedValueOnce(
+      new BadRequestException(
+        'Bracket generation requires a player count that is a power of 2 (2, 4, 8, 16, ...)',
+      ),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/tournaments/${tournament.id}/bracket`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(400);
+  });
+
+  it('POST /tournaments/:id/bracket returns 400 when bracket already exists', async () => {
+    (tournamentsServiceMock.generateBracket as jest.Mock).mockRejectedValueOnce(
+      new BadRequestException('Bracket already generated for this tournament'),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/tournaments/${tournament.id}/bracket`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(400);
   });
 
   it('DELETE /tournaments/:id with token returns 204', async () => {
