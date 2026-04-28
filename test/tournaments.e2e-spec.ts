@@ -58,6 +58,17 @@ describe('TournamentsController (e2e)', () => {
     winner: null,
   };
 
+  const generatedBracketMatch: Match = {
+    id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    round: 1,
+    status: MatchStatus.PENDING,
+    score: null,
+    tournament: tournament as any,
+    player1: { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' } as Player,
+    player2: { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' } as Player,
+    winner: null,
+  };
+
   const tournamentsServiceMock: Partial<TournamentsService> = {
     findAll: jest.fn().mockResolvedValue([tournament]),
     findOne: jest.fn().mockResolvedValue(tournament),
@@ -69,6 +80,7 @@ describe('TournamentsController (e2e)', () => {
       ...tournament,
       players: [{ id: '2a1fbb0c-cd4a-40ea-95ca-d1f9e86a3229' }],
     }),
+    generateBracket: jest.fn().mockResolvedValue([generatedBracketMatch]),
   };
 
   const gamesServiceMock: Partial<GamesService> = {
@@ -359,6 +371,21 @@ describe('TournamentsController (e2e)', () => {
       .expect(201);
 
     expect(response.body.data.players).toHaveLength(1);
+  });
+
+  it('POST /tournaments/:id/bracket without token returns 401', async () => {
+    await request(app.getHttpServer()).post(`/tournaments/${tournament.id}/bracket`).expect(401);
+  });
+
+  it('POST /tournaments/:id/bracket with token returns 201', async () => {
+    const response = await request(app.getHttpServer())
+      .post(`/tournaments/${tournament.id}/bracket`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(201);
+
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].round).toBe(1);
+    expect(response.body.data[0].status).toBe(MatchStatus.PENDING);
   });
 
   it('DELETE /tournaments/:id with token returns 204', async () => {
