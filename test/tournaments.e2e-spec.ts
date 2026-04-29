@@ -1,5 +1,4 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-Testimport { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -74,6 +73,24 @@ describe('TournamentsController (e2e)', () => {
     findAll: jest.fn().mockResolvedValue([tournament]),
     findOne: jest.fn().mockResolvedValue(tournament),
     findMatches: jest.fn().mockResolvedValue([match]),
+    getLeaderboard: jest.fn().mockResolvedValue([
+      {
+        playerId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        username: 'p1',
+        played: 2,
+        wins: 2,
+        losses: 0,
+        winRate: 1,
+      },
+      {
+        playerId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        username: 'p2',
+        played: 2,
+        wins: 0,
+        losses: 2,
+        winRate: 0,
+      },
+    ]),
     create: jest.fn().mockResolvedValue(tournament),
     update: jest.fn().mockResolvedValue({ ...tournament, name: 'Spring Cup Updated' }),
     remove: jest.fn().mockResolvedValue(undefined),
@@ -167,6 +184,12 @@ describe('TournamentsController (e2e)', () => {
     }),
     remove: jest.fn().mockResolvedValue(undefined),
     findTournaments: jest.fn().mockResolvedValue([tournament]),
+    getStats: jest.fn().mockResolvedValue({
+      played: 3,
+      wins: 2,
+      losses: 1,
+      winRate: 2 / 3,
+    }),
   };
 
   const players: Player[] = [];
@@ -324,6 +347,15 @@ describe('TournamentsController (e2e)', () => {
 
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].id).toBe(match.id);
+  });
+
+  it('GET /tournaments/:id/leaderboard returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/tournaments/${tournament.id}/leaderboard`)
+      .expect(200);
+
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.data[0].wins).toBeGreaterThanOrEqual(response.body.data[1].wins);
   });
 
   it('POST /tournaments without token returns 401', async () => {
@@ -667,6 +699,17 @@ describe('TournamentsController (e2e)', () => {
 
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].id).toBe(tournament.id);
+  });
+
+  it('GET /players/:id/stats with admin token returns 200', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/players/11111111-1111-4111-8111-111111111111/stats`)
+      .set('Authorization', `Bearer ${adminAccessToken}`)
+      .expect(200);
+
+    expect(response.body.data.played).toBe(3);
+    expect(response.body.data.wins).toBe(2);
+    expect(response.body.data.losses).toBe(1);
   });
 
   it('POST /players with admin token returns 201', async () => {

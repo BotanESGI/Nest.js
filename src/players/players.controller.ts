@@ -61,6 +61,15 @@ export class PlayersController {
     return this.playersService.findTournaments(id);
   }
 
+  @Get(':id/stats')
+  @ApiOperation({ summary: "Statistiques d'un joueur (admin)" })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Stats du joueur.' })
+  @ApiResponse({ status: 404, description: 'Joueur introuvable.' })
+  getStats(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.playersService.getStats(id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Creer un joueur (admin)' })
   @ApiBody({ type: CreatePlayerDto })

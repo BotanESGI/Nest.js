@@ -62,6 +62,15 @@ export class TournamentsController {
     return this.tournamentsService.findMatches(id);
   }
 
+  @Get(':id/leaderboard')
+  @ApiOperation({ summary: "Classement d'un tournoi" })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Classement du tournoi.' })
+  @ApiResponse({ status: 404, description: 'Tournoi introuvable.' })
+  getLeaderboard(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.tournamentsService.getLeaderboard(id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

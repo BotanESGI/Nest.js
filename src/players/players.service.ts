@@ -6,18 +6,27 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
+import { Match, MatchStatus } from '../database/entities/match.entity';
 import { Player, PlayerRole } from '../database/entities/player.entity';
 import { Tournament } from '../database/entities/tournament.entity';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 
 export type SafePlayer = Omit<Player, 'password'>;
+export type PlayerStats = {
+  played: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+};
 
 @Injectable()
 export class PlayersService {
   constructor(
     @InjectRepository(Player)
     private readonly playersRepository: Repository<Player>,
+    @InjectRepository(Match)
+    private readonly matchesRepository: Repository<Match>,
   ) {}
 
   async findAll(): Promise<SafePlayer[]> {
@@ -49,6 +58,29 @@ export class PlayersService {
     }
 
     return player.tournaments ?? [];
+  }
+
+  async getStats(id: string): Promise<PlayerStats> {
+    const player = await this.playersRepository.findOne({ where: { id } });
+    if (!player) {
+      throw new NotFoundException(`Player ${id} not found`);
+    }
+
+    const played = await this.matchesRepository.count({
+      where: [
+        { status: MatchStatus.COMPLETED, player1: { id } },
+        { status: MatchStatus.COMPLETED, player2: { id } },
+      ],
+    });
+
+    const wins = await this.matchesRepository.count({
+      where: { status: MatchStatus.COMPLETED, winner: { id } },
+    });
+
+    const losses = Math.max(played - wins, 0);
+    const winRate = played === 0 ? 0 : wins / played;
+
+    return { played, wins, losses, winRate };
   }
 
   async create(dto: CreatePlayerDto): Promise<SafePlayer> {

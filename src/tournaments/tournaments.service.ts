@@ -64,6 +64,86 @@ export class TournamentsService {
     });
   }
 
+  async getLeaderboard(
+    tournamentId: string,
+  ): Promise<
+    Array<{
+      playerId: string;
+      username: string;
+      played: number;
+      wins: number;
+      losses: number;
+      winRate: number;
+    }>
+  > {
+    const tournament = await this.tournamentsRepository.findOne({
+      where: { id: tournamentId },
+      relations: { players: true },
+    });
+
+    if (!tournament) {
+      throw new NotFoundException(`Tournament ${tournamentId} not found`);
+    }
+
+    const matches = await this.matchesRepository.find({
+      where: {
+        tournament: { id: tournamentId },
+        status: MatchStatus.COMPLETED,
+      },
+      relations: { player1: true, player2: true, winner: true },
+    });
+
+    type Entry = {
+      playerId: string;
+      username: string;
+      played: number;
+      wins: number;
+    };
+
+    const entries = new Map<string, Entry>();
+
+    const ensure = (player: Player) => {
+      if (!entries.has(player.id)) {
+        entries.set(player.id, {
+          playerId: player.id,
+          username: player.username,
+          played: 0,
+          wins: 0,
+        });
+      }
+    };
+
+    // Include all registered players even if they didn't play yet.
+    tournament.players.forEach(ensure);
+
+    matches.forEach((m) => {
+      ensure(m.player1);
+      ensure(m.player2);
+
+      entries.get(m.player1.id)!.played += 1;
+      entries.get(m.player2.id)!.played += 1;
+
+      if (m.winner) {
+        ensure(m.winner);
+        entries.get(m.winner.id)!.wins += 1;
+      }
+    });
+
+    const leaderboard = Array.from(entries.values()).map((e) => {
+      const losses = Math.max(e.played - e.wins, 0);
+      const winRate = e.played === 0 ? 0 : e.wins / e.played;
+      return { ...e, losses, winRate };
+    });
+
+    leaderboard.sort((a, b) => {
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      if (b.played !== a.played) return b.played - a.played;
+      return a.username.localeCompare(b.username);
+    });
+
+    return leaderboard;
+  }
+
   async create(createDto: CreateTournamentDto): Promise<Tournament> {
     const game = await this.gamesRepository.findOne({
       where: { id: createDto.gameId },
