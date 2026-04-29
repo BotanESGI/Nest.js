@@ -191,7 +191,7 @@ genre: string;
 
 #### 2. Système de brackets (+1.5 points) : Génération automatique des brackets pour les tournois ✅
 
-#### 3. Statistiques avancées (+1 point) : Classements, statistiques par joueur
+#### 3. Statistiques avancées (+1 point) : Classements, statistiques par joueur✅
 
 #### 4. Documentation API (+1 point) : Documentation Swagger/OpenAPI ✅
 
@@ -202,6 +202,6 @@ genre: string;
 |---|---:|---|
 | WebSocket | 1 pt | Temps réel |
 | Brackets ✅| 1.5 pts | Génération automatique |
-| Statistiques | 1 pt | Classements avancés |
+| Statistiques ✅| 1 pt | Classements avancés |
 | Documentation ✅| 1 pt | Swagger/OpenAPI |
 | Tests | 0.5 pt/module | Tests unitaires |
